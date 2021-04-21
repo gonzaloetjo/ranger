@@ -1,0 +1,24 @@
+podTemplate {
+    node('tdp-builder') {
+        stage('Git clone') {
+            checkout([$class: 'GitSCM', branches: [[name: 'ranger-2.0-TDP']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'http://gitlab.adaltas.com/dataclan/ranger.git']]])
+        }
+        stage('Build') {
+            container('tdp-builder'){
+                sh '''
+                mvn -Dmaven.repo.local=./.m2 -B clean install assembly:assembly -DskipTests -Drat.numUnapprovedLicenses=1000
+                '''
+            }
+        }
+        stage('Run unit tests') {
+            container('tdp-builder') {
+                sh '''
+                mvn -B -Dmaven.repo.local=./.m2 test
+                '''
+            }
+        }
+        stage('Publish tests results') {
+            junit '**/surefire-reports/*.xml'
+        }
+    }
+}
