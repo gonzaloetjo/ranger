@@ -59,7 +59,7 @@
                     <include>com.kstruct:gethostname4j:jar:${kstruct.gethostname4j.version}</include>
 					<include>net.java.dev.jna:jna:jar:${jna.version}</include>
 					<include>net.java.dev.jna:jna-platform:jar:${jna-platform.version}</include>
-                    <include>com.sun.jersey:jersey-client:jar:${sun-jersey-client.version}</include>
+                    <include>com.sun.jersey:jersey-bundle:jar:${sun-jersey-bundle.version}</include>
                 </includes>
                 <unpack>false</unpack>
             </dependencySet>
