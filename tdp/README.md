@@ -9,33 +9,33 @@ The file `./Jenkinsfile-sample` can be used in a Jenkins / Kubernetes environmen
 ## Making a release
 
 ```
-mvn clean install assembly:assembly -DskipTests -Drat.numUnapprovedLicenses=1000
+mvn clean install -DskipTests -Drat.numUnapprovedLicenses=1000
 ```
 
-The parameter `assembly:assembly` generates `.tar.gz` files for the Ranger Admin and all the plugins in the `target` directory:
+This command generates `.tar.gz` files for the Ranger Admin and all the plugins in the `target` directory:
 
-- ranger-1.2.1-SNAPSHOT-admin.tar.gz
-- ranger-1.2.1-SNAPSHOT-atlas-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-hbase-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-hdfs-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-hive-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-kafka-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-kms.tar.gz
-- ranger-1.2.1-SNAPSHOT-knox-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-migration-util.tar.gz
-- ranger-1.2.1-SNAPSHOT-ranger-tools.tar.gz
-- ranger-1.2.1-SNAPSHOT-solr-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-sqoop-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-src.tar.gz
-- ranger-1.2.1-SNAPSHOT-storm-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-tagsync.tar.gz
-- ranger-1.2.1-SNAPSHOT-usersync.tar.gz
-- ranger-1.2.1-SNAPSHOT-yarn-plugin.tar.gz
-- ranger-1.2.1-SNAPSHOT-kylin-plugin.tar.gz
-
-By default, the profile `all` is activated but when we can filter what plugins we want to package.
-
-For example: `mvn clean install assembly:assembly -P\!all -Pranger-hdfs-plugin -Pranger-hive-plugin -Pranger-yarn-plugin -DskipTests -Drat.numUnapprovedLicenses=1000`
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-admin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-atlas-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-elasticsearch-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-hbase-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-hdfs-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-hive-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-kafka-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-kms.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-knox-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-kylin-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-migration-util.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-ozone-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-presto-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-ranger-tools.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-solr-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-solr_audit_conf.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-sqoop-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-src.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-storm-plugin.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-tagsync.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-usersync.tar.gz
+- ranger-2.0.1-TDP-0.1.0-SNAPSHOT-yarn-plugin.tar.gz
 
 ## Testing parameters
 
