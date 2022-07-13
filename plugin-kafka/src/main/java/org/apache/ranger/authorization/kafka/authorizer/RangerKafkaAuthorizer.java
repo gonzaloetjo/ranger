@@ -28,6 +28,7 @@ import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.security.JaasContext;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+<<<<<<< HEAD
 
 import kafka.security.auth.*;
 import kafka.network.RequestChannel.Session;
@@ -39,6 +40,16 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.security.authenticator.LoginManager;
 import org.apache.kafka.common.security.kerberos.KerberosLogin;
+=======
+import org.apache.kafka.common.utils.SecurityUtils;
+import org.apache.kafka.server.authorizer.AclCreateResult;
+import org.apache.kafka.server.authorizer.AclDeleteResult;
+import org.apache.kafka.server.authorizer.Action;
+import org.apache.kafka.server.authorizer.AuthorizableRequestContext;
+import org.apache.kafka.server.authorizer.AuthorizationResult;
+import org.apache.kafka.server.authorizer.Authorizer;
+import org.apache.kafka.server.authorizer.AuthorizerServerInfo;
+>>>>>>> 0580e513e (RANGER-3809: Dummy impl for RangerKafkaAuthorizer#authorizeByResourceType)
 import org.apache.ranger.audit.provider.MiscUtil;
 import org.apache.ranger.plugin.policyengine.RangerAccessRequestImpl;
 import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl;
@@ -291,6 +302,7 @@ public class RangerKafkaAuthorizer implements Authorizer {
 		return aclList;
 	}
 
+<<<<<<< HEAD
 	/*
 	 * (non-Javadoc)
 	 *
@@ -346,4 +358,24 @@ public class RangerKafkaAuthorizer implements Authorizer {
 		}
 		return null;
 	}
+=======
+  // TODO: provide a real implementation (RANGER-3809)
+  // Currently we return a dummy implementation because KAFKA-13598 makes producers idempotent by default and this causes
+  // a failure in the InitProducerId API call on the broker side because of the missing acls() method implementation.
+  // Overriding this with a dummy impl will make Kafka return an authorization error instead of an exception if the
+  // IDEMPOTENT_WRITE permission wasn't set on the producer.
+  @Override
+  public AuthorizationResult authorizeByResourceType(AuthorizableRequestContext requestContext, AclOperation op, ResourceType resourceType) {
+    SecurityUtils.authorizeByResourceTypeCheckArgs(op, resourceType);
+
+    logger.debug("authorizeByResourceType call is not supported by Ranger for Kafka yet");
+    return AuthorizationResult.DENIED;
+  }
+
+  @Override
+  public Iterable<AclBinding> acls(AclBindingFilter filter) {
+    logger.error("(getting) acls is not supported by Ranger for Kafka");
+    throw new UnsupportedOperationException("(getting) acls is not supported by Ranger for Kafka");
+  }
+>>>>>>> 0580e513e (RANGER-3809: Dummy impl for RangerKafkaAuthorizer#authorizeByResourceType)
 }

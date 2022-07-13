@@ -25,6 +25,7 @@ import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.Future;
@@ -110,7 +111,7 @@ public class KafkaRangerAuthorizerTest {
         serverSocket.close();
 
         tempDir = Files.createTempDirectory("kafka");
-        
+
         final Properties props = new Properties();
         props.put("broker.id", 1);
         props.put("host.name", "localhost");
@@ -193,8 +194,6 @@ public class KafkaRangerAuthorizerTest {
         producerProps.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststorePath);
         producerProps.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "security");
         
-        final Producer<String, String> producer = new KafkaProducer<>(producerProps);
-        
         // Create the Consumer
         Properties consumerProps = new Properties();
         consumerProps.put("bootstrap.servers", "localhost:" + port);
@@ -212,31 +211,30 @@ public class KafkaRangerAuthorizerTest {
         consumerProps.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "ckpass");
         consumerProps.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststorePath);
         consumerProps.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "security");
-        
-        final KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
-        consumer.subscribe(Arrays.asList("test"));
-        
-        // Send a message
-        producer.send(new ProducerRecord<String, String>("test", "somekey", "somevalue"));
-        producer.flush();
-        
-        // Poll until we consume it
-        
-        ConsumerRecord<String, String> record = null;
-        for (int i = 0; i < 1000; i++) {
-            ConsumerRecords<String, String> records = consumer.poll(100);
-            if (records.count() > 0) {
-                record = records.iterator().next();
-                break;
+
+        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps)) {
+            consumer.subscribe(Arrays.asList("test"));
+
+            try (Producer<String, String> producer = new KafkaProducer<>(producerProps)) {
+                // Send a message
+                producer.send(new ProducerRecord<>("test", "somekey", "somevalue"));
+                producer.flush();
             }
-            Thread.sleep(1000);
+
+            // Poll until we consume it
+            ConsumerRecord<String, String> record = null;
+            for (int i = 0; i < 1000; i++) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+                if (records.count() > 0) {
+                    record = records.iterator().next();
+                    break;
+                }
+                Thread.sleep(1000);
+            }
+
+            Assert.assertNotNull(record);
+            Assert.assertEquals("somevalue", record.value());
         }
-
-        Assert.assertNotNull(record);
-        Assert.assertEquals("somevalue", record.value());
-
-        producer.close();
-        consumer.close();
     }
     
     // The "IT" group can write to any topic
@@ -255,15 +253,13 @@ public class KafkaRangerAuthorizerTest {
         producerProps.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "skpass");
         producerProps.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststorePath);
         producerProps.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "security");
-        
-        final Producer<String, String> producer = new KafkaProducer<>(producerProps);
-        // Send a message
-        Future<RecordMetadata> record = 
-            producer.send(new ProducerRecord<String, String>("dev", "somekey", "somevalue"));
-        producer.flush();
-        record.get();
 
-        producer.close();
+        try (Producer<String, String> producer = new KafkaProducer<>(producerProps)) {
+            // Send a message
+            Future<RecordMetadata> record = producer.send(new ProducerRecord<>("dev", "somekey", "somevalue"));
+            producer.flush();
+            record.get();
+        }
     }
     
     // The "public" group can write to "test" but not "dev"
@@ -282,24 +278,22 @@ public class KafkaRangerAuthorizerTest {
         producerProps.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "ckpass");
         producerProps.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststorePath);
         producerProps.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "security");
-        
-        final Producer<String, String> producer = new KafkaProducer<>(producerProps);
-        
-        // Send a message
-        Future<RecordMetadata> record =
-            producer.send(new ProducerRecord<String, String>("test", "somekey", "somevalue"));
-        producer.flush();
-        record.get();
-        
-        try {
-            record = producer.send(new ProducerRecord<String, String>("dev", "somekey", "somevalue"));
+
+        try (Producer<String, String> producer = new KafkaProducer<>(producerProps)) {
+            // Send a message
+            Future<RecordMetadata> record =
+                producer.send(new ProducerRecord<>("test", "somekey", "somevalue"));
             producer.flush();
             record.get();
-        } catch (Exception ex) {
-            Assert.assertTrue(ex.getMessage().contains("Not authorized to access topics"));
+
+            try {
+                record = producer.send(new ProducerRecord<>("dev", "somekey", "somevalue"));
+                producer.flush();
+                record.get();
+            } catch (Exception ex) {
+                Assert.assertTrue(ex.getMessage().contains("Not authorized to access topics"));
+            }
         }
-        
-        producer.close();
     }
 
     // The "public" group can read from "messages"
@@ -319,8 +313,6 @@ public class KafkaRangerAuthorizerTest {
         producerProps.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststorePath);
         producerProps.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "security");
 
-        final Producer<String, String> producer = new KafkaProducer<>(producerProps);
-
         // Create the Consumer
         Properties consumerProps = new Properties();
         consumerProps.put("bootstrap.servers", "localhost:" + port);
@@ -339,30 +331,29 @@ public class KafkaRangerAuthorizerTest {
         consumerProps.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststorePath);
         consumerProps.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "security");
 
-        final KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
-        consumer.subscribe(Arrays.asList("messages"));
+        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps)) {
+            consumer.subscribe(Arrays.asList("messages"));
 
-        // Send a message
-        producer.send(new ProducerRecord<String, String>("messages", "somekey", "somevalue"));
-        producer.flush();
-
-        // Poll until we consume it
-
-        ConsumerRecord<String, String> record = null;
-        for (int i = 0; i < 1000; i++) {
-            ConsumerRecords<String, String> records = consumer.poll(100);
-            if (records.count() > 0) {
-                record = records.iterator().next();
-                break;
+            try (Producer<String, String> producer = new KafkaProducer<>(producerProps)) {
+                // Send a message
+                producer.send(new ProducerRecord<>("messages", "somekey", "somevalue"));
+                producer.flush();
             }
-            Thread.sleep(1000);
+
+            // Poll until we consume it
+            ConsumerRecord<String, String> record = null;
+            for (int i = 0; i < 1000; i++) {
+                ConsumerRecords<String, String> records = consumer.poll(100);
+                if (records.count() > 0) {
+                    record = records.iterator().next();
+                    break;
+                }
+                Thread.sleep(1000);
+            }
+
+            Assert.assertNotNull(record);
+            Assert.assertEquals("somevalue", record.value());
         }
-
-        Assert.assertNotNull(record);
-        Assert.assertEquals("somevalue", record.value());
-
-        producer.close();
-        consumer.close();
     }
 
 }
